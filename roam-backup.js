@@ -28,6 +28,9 @@ if (!database || !username || !password) {
 
 (async () => {
   try {
+    try {
+      fs.mkdirSync(downloadPath);
+    } catch (e) {}
     await openBrowser();
     await client().send("Page.setDownloadBehavior", {
       behavior: "allow",
