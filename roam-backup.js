@@ -12,6 +12,7 @@ const {
   client,
   closeBrowser,
 } = require("taiko");
+const process = require("process");
 const path = require("path");
 const fs = require("fs");
 
@@ -20,38 +21,12 @@ const username = process.env.ROAM_USERNAME;
 const password = process.env.ROAM_PASSWORD;
 const downloadPath = path.resolve(__dirname, "roam_downloads");
 
-async function waitForZipFile(dir, maxTime = 10 * 60 * 1000) {
-  let checkInterval = 500;
-  let checkZipFilePresent = (dir) => {
-    let files = fs.readdirSync(dir);
-    let filtered = files
-      .filter((f) => f.toLowerCase().endsWith(".zip"));
-
-    return filtered.length > 0;
-  };
-
-  return new Promise((resolve, reject) => {
-    if (checkZipFilePresent(dir)) {
-      resolve(true);
-    } else {
-      let interval = setInterval(() => {
-        console.log("Will wait for %s seconds...", maxTime);
-        maxTime -= checkInterval;
-        if (maxTime <= checkInterval) {
-          clearInterval(interval);
-          resolve(false);
-        }
-        if (checkZipFilePresent(dir)) {
-          clearInterval(interval);
-          resolve(true);
-        }
-      }, checkInterval);
-    }
-  });
+if (!database || !username || !password) {
+  console.log("Please make sure all env vars are set before running!");
+  process.exit(1);
 }
 
 (async () => {
-  // waitForZipFile(downloadPath);
   try {
     await openBrowser();
     await client().send("Page.setDownloadBehavior", {
@@ -86,3 +61,33 @@ async function waitForZipFile(dir, maxTime = 10 * 60 * 1000) {
     await closeBrowser();
   }
 })();
+
+async function waitForZipFile(dir, maxTime = 10 * 60 * 1000) {
+  let checkInterval = 500;
+  let checkZipFilePresent = (dir) => {
+    let files = fs.readdirSync(dir);
+    let filtered = files
+      .filter((f) => f.toLowerCase().endsWith(".zip"));
+
+    return filtered.length > 0;
+  };
+
+  return new Promise((resolve, reject) => {
+    if (checkZipFilePresent(dir)) {
+      resolve(true);
+    } else {
+      let interval = setInterval(() => {
+        console.log("Will wait for %s seconds...", maxTime);
+        maxTime -= checkInterval;
+        if (maxTime <= checkInterval) {
+          clearInterval(interval);
+          resolve(false);
+        }
+        if (checkZipFilePresent(dir)) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      }, checkInterval);
+    }
+  });
+}
