@@ -1,0 +1,69 @@
+name: "auto-roam2agora"
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    name: Backup
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "15.x"
+      - run: npm install
+      - env:
+          ROAM_USERNAME: ${{ secrets.roamUsername }}
+          ROAM_PASSWORD: ${{ secrets.roamPassword }}
+          ROAM_DATABASE: ${{ secrets.roamDatabase }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.githubToken }}
+          GARDEN_REPO: ${{ secrets.gardenRepo }}
+        run: npm start
+      - run: |
+          set -x
+          GARDEN_DIR="$PWD/garden"
+
+          # install roam2agora
+          curl -L -o ./roam2agora https://github.com/nikvdp/roam2agora/releases/latest/download/roam2agora-linux
+          chmod +x ./roam2agora
+
+          # clone the earlier agora
+          GARDEN_CLONE_URL="$(echo "$GARDEN_REPO" | sed "s|https://|https://$PERSONAL_ACCESS_TOKEN:x-oauth-basic@|")"
+          mkdir -p "$GARDEN_DIR"
+          git clone "$GARDEN_CLONE_URL" "$GARDEN_DIR"
+
+          # delete existing files from repo (.git folder will remain) so that
+          # deletions are accounted for
+          pushd "$GARDEN_DIR"
+          rm -rf *
+          popd
+
+          ./roam2agora -i roam_downloads/roam-backup.json -o "$GARDEN_DIR"
+
+          pushd "$GARDEN_DIR"
+          git add .
+          git commit -a -m "auto-roam2agora commit: $(date)"
+          git push
+          popd
+        env:
+          ROAM_USERNAME: ${{ secrets.roamUsername }}
+          ROAM_PASSWORD: ${{ secrets.roamPassword }}
+          ROAM_DATABASE: ${{ secrets.roamDatabase }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.githubToken }}
+          GARDEN_REPO: ${{ secrets.gardenRepo }}
+          # set git vars to record the commit
+          GIT_COMMITTER_NAME: "auto-roam2agora"
+          GIT_COMMITTER_EMAIL: "autoroam2agora@nowhere.com"
+          GIT_AUTHOR_NAME: "auto-roam2agora"
+          GIT_AUTHOR_EMAIL: "autoroam2agora@nowhere.com"
+
+
