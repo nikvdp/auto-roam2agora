@@ -15,6 +15,8 @@ const {
 const process = require("process");
 const path = require("path");
 const fs = require("fs");
+const sh = require("shelljs");
+const AdmZip = require("adm-zip");
 
 const database = process.env.ROAM_DATABASE;
 const username = process.env.ROAM_USERNAME;
@@ -58,12 +60,29 @@ if (!database || !username || !password) {
     //   https://spectrum.chat/taiko/general/awaiting-for-a-file-to-download~bcb1f29b-08c7-4a9b-b458-690662a56790
     // await waitFor(120 * 1000);
     await waitForZipFile(downloadPath);
+
+    await extractZipFile(downloadPath);
   } catch (error) {
     console.error(error);
   } finally {
     await closeBrowser();
   }
 })();
+
+async function extractZipFile(dir) {
+  let [zipFilePath] = fs.readdirSync(dir).filter((f) =>
+    f.toLowerCase().endsWith(".zip")
+  );
+  const zip = new AdmZip(path.resolve(dir, zipFilePath));
+  zip.extractAllTo(dir);
+  let [roamBackupPath] = fs.readdirSync(dir).filter((f) =>
+    f.toLowerCase().endsWith(".json")
+  );
+  sh.mv(
+    path.resolve(dir, roamBackupPath),
+    path.resolve(downloadPath, "roam-backup.json"),
+  );
+}
 
 async function waitForZipFile(dir, maxTime = 10 * 60 * 1000) {
   let checkInterval = 500;

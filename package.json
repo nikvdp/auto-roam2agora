@@ -4,11 +4,14 @@
   "description": "",
   "main": "roam-backup.js",
   "scripts": {
+    "start": "taiko auto-roam2agora.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "taiko": "^1.1.0"
+    "adm-zip": "^0.5.1",
+    "shelljs": "^0.8.4",
+    "taiko": "^1.1.1"
   }
 }
