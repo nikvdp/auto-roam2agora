@@ -51,8 +51,11 @@ jobs:
 
           pushd "$GARDEN_DIR"
           git add .
-          git commit -a -m "auto-roam2agora commit: $(date)"
-          git push
+          # if nothing has changed these could return an error exit code 
+          # which will clutter up the github action logs, so avoid that 
+          # with `|| true`
+          git commit -a -m "auto-roam2agora commit: $(date)" || true
+          git push || true
           popd
         env:
           ROAM_USERNAME: ${{ secrets.roamUsername }}
